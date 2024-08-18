@@ -16,13 +16,15 @@ export default defineConfig({
   description: 'AES Docs',
   lang: 'zh-TW',
   themeConfig: {
+    editLink: {
+      pattern: 'https://github.com/njyun666666/AES-Docs/edit/main/docs/:path'
+    },
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Examples', link: '/markdown-examples' }
     ],
-
     sidebar: generateSidebar(vitepressSidebarOptions),
-    socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }]
+    socialLinks: [{ icon: 'github', link: 'https://github.com/njyun666666/AES-Docs' }]
   }
 })

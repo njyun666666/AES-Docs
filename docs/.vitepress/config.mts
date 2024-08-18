@@ -1,9 +1,20 @@
 import { defineConfig } from 'vitepress'
+import { generateSidebar } from 'vitepress-sidebar'
+
+const vitepressSidebarOptions = {
+  documentRootPath: '/docs',
+  collapsed: true,
+  useTitleFromFrontmatter: true,
+  useFolderTitleFromIndexFile: true,
+  sortMenusByFrontmatterOrder: true,
+  frontmatterOrderDefaultValue: 999
+}
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'AES Docs',
   description: 'AES Docs',
+  lang: 'zh-TW',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
@@ -11,16 +22,7 @@ export default defineConfig({
       { text: 'Examples', link: '/markdown-examples' }
     ],
 
-    sidebar: [
-      {
-        text: 'Examples',
-        items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
-        ]
-      }
-    ],
-
+    sidebar: generateSidebar(vitepressSidebarOptions),
     socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }]
   }
 })

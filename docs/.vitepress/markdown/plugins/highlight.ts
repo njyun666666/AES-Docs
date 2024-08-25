@@ -1,4 +1,3 @@
-import type { ThemeOptions } from '../markdown'
 import {
   type TransformerCompactLineOption,
   transformerCompactLineOptions,
@@ -12,7 +11,7 @@ import c from 'picocolors'
 import type { ShikiTransformer } from 'shiki'
 import { bundledLanguages, createHighlighter, isSpecialLang } from 'shiki'
 import type { Logger } from 'vite'
-import { MarkdownOptions } from 'vitepress'
+import { MarkdownOptions, ThemeOptions } from 'vitepress'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 10)
 

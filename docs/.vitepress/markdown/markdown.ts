@@ -1,3 +1,4 @@
+// https://github.com/vuejs/vitepress/blob/main/src/node/markdown/markdown.ts
 import { type ContainerOptions, containerPlugin } from './plugins/containers.ts'
 import { gitHubAlertsPlugin } from './plugins/githubAlerts.ts'
 import { highlight } from './plugins/highlight.ts'
@@ -7,6 +8,7 @@ import { lineNumberPlugin } from './plugins/lineNumbers.ts'
 // import { linkPlugin } from './plugins/link.ts'
 import { preWrapperPlugin } from './plugins/preWrapper.ts'
 import { restoreEntities } from './plugins/restoreEntities.ts'
+// import { snippetPlugin } from './plugins/snippet.ts'
 import { type ComponentPluginOptions, componentPlugin } from '@mdit-vue/plugin-component'
 // import { type FrontmatterPluginOptions, frontmatterPlugin } from '@mdit-vue/plugin-frontmatter'
 import { type HeadersPluginOptions, headersPlugin } from '@mdit-vue/plugin-headers'
@@ -19,29 +21,10 @@ import MarkdownIt from 'markdown-it'
 // import anchorPlugin from 'markdown-it-anchor'
 import attrsPlugin from 'markdown-it-attrs'
 import { full as emojiPlugin } from 'markdown-it-emoji'
-import type {
-  BuiltinTheme,
-  Highlighter,
-  LanguageInput,
-  ShikiTransformer,
-  ThemeRegistrationAny
-} from 'shiki'
 import type { Logger } from 'vite'
-import { MarkdownOptions } from 'vitepress'
+import { MarkdownOptions, MarkdownRenderer } from 'vitepress'
 
-//   import { snippetPlugin } from './plugins/snippet.ts'
-
-//   export type { Header } from '../shared'
-
-export type ThemeOptions =
-  | ThemeRegistrationAny
-  | BuiltinTheme
-  | {
-      light: ThemeRegistrationAny | BuiltinTheme
-      dark: ThemeRegistrationAny | BuiltinTheme
-    }
-
-export type MarkdownRenderer = MarkdownIt
+// export type { Header } from '../shared'
 
 export const createMarkdownRenderer = async (
   srcDir?: string,

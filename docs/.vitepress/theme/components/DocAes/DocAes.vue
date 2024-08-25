@@ -3,6 +3,7 @@ import { createMarkdownRenderer } from '../../../markdown/markdown'
 import Button from '../ui/Button.vue'
 import InputText from '../ui/InputText.vue'
 import Textarea from '../ui/Textarea.vue'
+import { watchDebounced } from '@vueuse/core'
 import MarkdownIt from 'markdown-it'
 import { useData } from 'vitepress'
 import { computed, ref, watch } from 'vue'
@@ -37,11 +38,6 @@ Inline \`code\`
 
 `)
 const contentHtml = ref('')
-// computed(async () => {
-//   const a = (await createMarkdownRenderer()).render(contentMd.value)
-//   console.log(a)
-//   return a
-// })
 
 const isNew = computed(() => page.value.filePath === 'new.md')
 
@@ -50,26 +46,15 @@ const aesHandle = (e: MouseEvent) => {
   console.log(a)
 }
 
-//  createMarkdownRenderer
-
-const md = MarkdownIt({
-  html: true,
-  linkify: true
-  // highlight: (await highlight(theme, options, logger)),
-  // ...options
-})
-
-watch(
+watchDebounced(
   contentMd,
   async (val) => {
-    const html = (await createMarkdownRenderer()).render(contentMd.value)
-
-    // const html = md.render(contentMd.value)
+    const html = (await createMarkdownRenderer()).render(val)
     contentHtml.value = html
-    console.log(contentMd.value, html)
   },
   {
-    immediate: true
+    immediate: true,
+    debounce: 1000
   }
 )
 </script>

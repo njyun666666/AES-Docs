@@ -14,13 +14,13 @@ provide('sidebarAesKey', sidebarAesKey)
 
 <template>
   <Layout>
-    <template #sidebar-nav-before>
+    <!-- <template #sidebar-nav-before>
       <ClientOnly>
-        <div style="padding-top: 0.5rem">
+        <div class="SidebarAes">
           <SidebarAes />
         </div>
       </ClientOnly>
-    </template>
+    </template> -->
     <template #doc-before>
       <ClientOnly>
         <div>
@@ -30,3 +30,9 @@ provide('sidebarAesKey', sidebarAesKey)
     </template>
   </Layout>
 </template>
+<style scoped>
+.SidebarAes {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+</style>

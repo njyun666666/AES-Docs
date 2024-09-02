@@ -114,6 +114,11 @@ watchDebounced(
 </script>
 <template>
   <div class="doc-aes">
+    <div class="vp-doc">
+      <h1>
+        {{ page.title }}
+      </h1>
+    </div>
     <div class="doc-aes-input">
       <InputText
         type="password"

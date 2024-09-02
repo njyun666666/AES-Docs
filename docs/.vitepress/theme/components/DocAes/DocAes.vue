@@ -10,8 +10,8 @@ import { computed, ref, watch } from 'vue'
 
 const { site, page, frontmatter } = useData()
 const clipboard = useClipboard()
-const docAesKey = ref('1')
-const docAesKeyConfirm = ref('1')
+const docAesKey = ref('')
+const docAesKeyConfirm = ref('')
 const contentFrontmatter = ref('')
 const contentMd = ref('')
 const contentHtml = ref('')
@@ -49,10 +49,8 @@ const pushHandle = async () => {
   if (!comfirmKey()) return
 
   const encrypt = await encryptMessage(docAesKey.value, contentMd.value)
-  // const decrypt = await decryptMessage(docAesKey.value, encrypt)
-  let githubUrl = `${site.value.themeConfig.editLink.pattern}`.replace(/\/:path/, '')
-  // console.log(encrypt, decrypt)
   const pageContent = composeText(encrypt)
+  let githubUrl = `${site.value.themeConfig.editLink.pattern}`.replace(/\/:path/, '')
 
   clipboard.copy(pageContent)
 
@@ -80,7 +78,22 @@ ${encrypt}
 watch(
   page,
   () => {
-    console.log(page.value.filePath)
+    // console.log('isNew', isNew.value)
+    // console.log(page.value.filePath)
+
+    isEditMode.value = false
+    docAesKey.value = ''
+    docAesKeyConfirm.value = ''
+    contentFrontmatter.value = Object.entries(frontmatter.value)
+      .map(([key, item]) => `${key}: ${item}`)
+      .join('\n')
+    contentMd.value = ''
+    contentHtml.value = ''
+
+    if (isNew.value) {
+      isEditMode.value = true
+      contentFrontmatter.value = `title: `
+    }
   },
   {
     immediate: true
@@ -102,9 +115,19 @@ watchDebounced(
 <template>
   <div class="doc-aes">
     <div class="doc-aes-input">
-      <InputText type="password" v-model="docAesKey" placeholder="Key" />
-      <InputText type="password" v-model="docAesKeyConfirm" placeholder="Confirm Key" />
-      <Button type="button" @click="decryptHandle">🔓</Button>
+      <InputText
+        type="password"
+        v-model="docAesKey"
+        placeholder="Key"
+        autocomplete="one-time-code"
+      />
+      <InputText
+        type="password"
+        v-model="docAesKeyConfirm"
+        placeholder="Confirm Key"
+        autocomplete="one-time-code"
+      />
+      <Button type="button" @click="decryptHandle" title="Unlock">🔓</Button>
     </div>
     <div class="toolbar">
       <Button type="button" class="edit" title="Edit" @click="editHandle">
@@ -123,15 +146,6 @@ watchDebounced(
       </div>
       <div class="content-html vp-doc" v-html="contentHtml"></div>
     </div>
-    <p>
-      {{ page }}
-    </p>
-    <p>
-      {{ isNew }}
-    </p>
-    <p>
-      {{ frontmatter }}
-    </p>
   </div>
 </template>
 <style scoped>
@@ -148,6 +162,7 @@ watchDebounced(
 
 .doc-aes-input > input {
   flex-grow: 1;
+  color: transparent;
 }
 
 .toolbar {

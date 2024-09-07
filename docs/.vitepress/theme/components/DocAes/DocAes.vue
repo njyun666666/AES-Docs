@@ -22,7 +22,9 @@ const isNew = computed(() => page.value.filePath === 'new.md')
 const isDecrypt = ref(false)
 const isEditMode = ref(false)
 
-const decryptHandle = async () => {
+const decryptHandle = async (e: SubmitEvent) => {
+  e.preventDefault()
+
   if (!comfirmKey()) return
   const encrypt = document.querySelector('#aes>p')?.textContent ?? ''
   const decrypt = await decryptMessage(docAesKey.value.trim(), encrypt).catch(() => {})
@@ -239,22 +241,24 @@ watchDebounced(
     </div>
 
     <!-- key -->
-    <div class="doc-aes-input">
-      <InputText
-        type="password"
-        v-model="docAesKey"
-        placeholder="Key"
-        autocomplete="one-time-code"
-      />
-      <InputText
-        type="password"
-        v-model="docAesKeyConfirm"
-        placeholder="Confirm Key"
-        autocomplete="one-time-code"
-      />
-      <Button type="button" @click="decryptHandle" title="Unlock" :class="{ invisible: isNew }"
-        >🔓</Button
-      >
+    <div>
+      <form class="doc-aes-form" @submit="decryptHandle">
+        <InputText
+          type="password"
+          v-model="docAesKey"
+          placeholder="Key"
+          autocomplete="one-time-code"
+        />
+        <InputText
+          type="password"
+          v-model="docAesKeyConfirm"
+          placeholder="Confirm Key"
+          autocomplete="one-time-code"
+        />
+        <Button type="submit" title="Unlock" :class="{ invisible: isNew }">
+          <span>🔓</span>
+        </Button>
+      </form>
     </div>
 
     <!-- toolbar -->
@@ -312,12 +316,12 @@ watchDebounced(
   gap: 1rem;
 }
 
-.doc-aes-input {
+.doc-aes-form {
   display: flex;
   gap: 0.5rem;
 }
 
-.doc-aes-input > input {
+.doc-aes-form > input {
   flex-grow: 1;
   color: transparent;
 }

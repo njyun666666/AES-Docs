@@ -19,6 +19,7 @@ const contentMd = ref('')
 const contentHtml = ref('')
 
 const isNew = computed(() => page.value.filePath === 'new.md')
+const isDecrypt = ref(false)
 const isEditMode = ref(false)
 
 const decryptHandle = async () => {
@@ -34,6 +35,7 @@ const decryptHandle = async () => {
   contentMd.value = decrypt
   frontmatterList.value = await parseFrontmatterList()
   // console.log(encrypt, decrypt)
+  isDecrypt.value = true
   return true
 }
 
@@ -52,8 +54,10 @@ const comfirmKey = () => {
 }
 
 const editHandle = async () => {
-  const result = await decryptHandle()
-  if (!result) return
+  if (!isDecrypt.value) {
+    alert(`Unlock first`)
+    return
+  }
 
   isEditMode.value = !isEditMode.value
 }

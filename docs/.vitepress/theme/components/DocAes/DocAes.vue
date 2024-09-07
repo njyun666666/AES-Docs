@@ -162,13 +162,15 @@ const callApi = (text: string) => {
     }
   })
     .then(function (response) {
-      if (!response.ok) {
-        alert('call api error')
+      // console.log(response)
+      // console.log(response.status, response.ok)
+      if (response.status != 0 && !response.ok) {
+        alert(`call api error, ${response.status}`)
       }
       // return response.json();
     })
     .catch(() => {
-      alert('call api error')
+      alert('catch: call api error')
     })
 }
 

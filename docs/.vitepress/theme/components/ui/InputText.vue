@@ -37,4 +37,9 @@ input:focus {
   border-style: solid;
   border-color: var(--vp-c-brand-1);
 }
+
+input[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 </style>

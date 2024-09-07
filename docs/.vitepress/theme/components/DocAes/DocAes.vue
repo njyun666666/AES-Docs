@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { createMarkdownRenderer } from '../../../markdown/markdown'
 import { decryptMessage, encryptMessage } from '../../../shared/aes'
+import { FrontmatterModel, LogModel } from '../../../shared/model'
+import { uuid } from '../../../shared/uuid'
 import Button from '../ui/Button.vue'
 import InputText from '../ui/InputText.vue'
 import Textarea from '../ui/Textarea.vue'
@@ -12,19 +14,27 @@ const { site, page, frontmatter } = useData()
 const clipboard = useClipboard()
 const docAesKey = ref('')
 const docAesKeyConfirm = ref('')
-const contentFrontmatter = ref('')
+const frontmatterList = ref<FrontmatterModel[]>([])
 const contentMd = ref('')
 const contentHtml = ref('')
 
 const isNew = computed(() => page.value.filePath === 'new.md')
 const isEditMode = ref(false)
 
-const decryptHandle = async (e: MouseEvent) => {
+const decryptHandle = async () => {
   if (!comfirmKey()) return
   const encrypt = document.querySelector('#aes>p')?.textContent ?? ''
-  const decrypt = await decryptMessage(docAesKey.value.trim(), encrypt)
+  const decrypt = await decryptMessage(docAesKey.value.trim(), encrypt).catch(() => {})
+
+  if (!decrypt) {
+    alert(`Decrypt failed `)
+    return
+  }
+
   contentMd.value = decrypt
+  frontmatterList.value = await parseFrontmatterList()
   // console.log(encrypt, decrypt)
+  return true
 }
 
 const comfirmKey = () => {
@@ -41,18 +51,34 @@ const comfirmKey = () => {
   return true
 }
 
-const editHandle = () => {
+const editHandle = async () => {
+  const result = await decryptHandle()
+  if (!result) return
+
   isEditMode.value = !isEditMode.value
+}
+
+const addHandle = () => {
+  frontmatterList.value.push({ id: uuid(), name: '', value: '' })
+}
+
+const removeHandle = (id: string) => {
+  frontmatterList.value = frontmatterList.value.filter((x) => x.id != id)
 }
 
 const pushHandle = async () => {
   if (!comfirmKey()) return
 
   const encrypt = await encryptMessage(docAesKey.value, contentMd.value)
-  const pageContent = composeText(encrypt)
+  const fm = await parseFrontmatter()
+
+  if (!encrypt || !fm) return
+
+  const pageContent = composeText(fm, encrypt)
   let githubUrl = `${site.value.themeConfig.editLink.pattern}`.replace(/\/:path/, '')
 
   clipboard.copy(pageContent)
+  callApi(pageContent)
 
   if (isNew.value) {
     githubUrl =
@@ -64,9 +90,51 @@ const pushHandle = async () => {
   window.open(githubUrl, '_blank')
 }
 
-const composeText = (encrypt: string) => {
+const parseFrontmatter = async () => {
+  let result = ``
+
+  for (const item of frontmatterList.value) {
+    if (!item.name && !item.value) continue
+    if (!item.name || !item.value) {
+      alert('Required: Frontmatter')
+      return
+    }
+
+    let value = item.value
+
+    if (item.name === 'api' && item.value) {
+      value = await encryptMessage(docAesKey.value, value)
+    }
+
+    result += `${item.name}: ${value ?? ''}\n`
+  }
+
+  return result
+}
+
+const parseFrontmatterList = async () => {
+  const list = [] as FrontmatterModel[]
+
+  for (const [key, item] of Object.entries(frontmatter.value)) {
+    let value = item
+
+    if (key === 'api' && value) {
+      value = await decryptMessage(docAesKey.value, value)
+    }
+
+    list.push({
+      id: uuid(),
+      name: key,
+      value: value
+    })
+  }
+
+  return list
+}
+
+const composeText = (fm: string, encrypt: string) => {
   return `---
-${contentFrontmatter.value}
+${fm}
 ---
 
 ::: details AES {#aes}
@@ -75,24 +143,64 @@ ${encrypt}
 `
 }
 
+const callApi = (text: string) => {
+  const api = frontmatterList.value.find((x) => x.name === 'api')?.value
+  if (!api) return
+
+  const data: LogModel = {
+    filePath: page.value.filePath,
+    content: text
+  }
+
+  fetch(api, {
+    method: 'POST',
+    mode: 'no-cors',
+    cache: 'no-cache',
+    body: JSON.stringify(data),
+    headers: {
+      'content-type': 'application/json'
+    }
+  })
+    .then(function (response) {
+      if (!response.ok) {
+        alert('call api error')
+      }
+      // return response.json();
+    })
+    .catch(() => {
+      alert('call api error')
+    })
+}
+
 watch(
   page,
-  () => {
+  async () => {
     // console.log('isNew', isNew.value)
     // console.log(page.value.filePath)
 
     isEditMode.value = false
     docAesKey.value = ''
     docAesKeyConfirm.value = ''
-    contentFrontmatter.value = Object.entries(frontmatter.value)
-      .map(([key, item]) => `${key}: ${item}`)
-      .join('\n')
+    frontmatterList.value = []
+    //await parseFrontmatterList()
+
     contentMd.value = ''
     contentHtml.value = ''
 
     if (isNew.value) {
       isEditMode.value = true
-      contentFrontmatter.value = `title: `
+      frontmatterList.value = [
+        {
+          id: uuid(),
+          name: 'title',
+          value: ''
+        },
+        {
+          id: uuid(),
+          name: 'api',
+          value: ''
+        }
+      ]
     }
   },
   {
@@ -118,7 +226,13 @@ watchDebounced(
       <h1>
         {{ page.title }}
       </h1>
+      <!-- <p>
+        frontmatterList:
+        {{ frontmatterList }}
+      </p> -->
     </div>
+
+    <!-- key -->
     <div class="doc-aes-input">
       <InputText
         type="password"
@@ -132,8 +246,12 @@ watchDebounced(
         placeholder="Confirm Key"
         autocomplete="one-time-code"
       />
-      <Button type="button" @click="decryptHandle" title="Unlock">🔓</Button>
+      <Button type="button" @click="decryptHandle" title="Unlock" :class="{ invisible: isNew }"
+        >🔓</Button
+      >
     </div>
+
+    <!-- toolbar -->
     <div class="toolbar">
       <Button type="button" class="edit" title="Edit" @click="editHandle">
         <span class="vpi-square-pen"></span>
@@ -142,9 +260,37 @@ watchDebounced(
         <span class="vpi-social-github"></span>
       </Button>
     </div>
+
+    <!-- frontmatter -->
     <div class="frontmatter" v-if="isEditMode">
-      <Textarea class="textarea" v-model="contentFrontmatter" />
+      <div class="frontmatter-header">
+        <h2>Frontmatter</h2>
+        <div class="grow"></div>
+        <Button type="button" title="Add" @click="addHandle"> + </Button>
+      </div>
+      <div class="frontmatter-item" v-for="item in frontmatterList" :key="item.id">
+        <InputText
+          type="text"
+          class="frontmatter-name"
+          v-model="item.name"
+          :disabled="['title', 'api'].includes(item.name)"
+        />
+        <span class="frontmatter-separate">:</span>
+        <InputText type="text" class="frontmatter-value" v-model="item.value" />
+        <Button
+          type="button"
+          title="Remove"
+          :class="{ invisible: ['title', 'api'].includes(item.name) }"
+          @click="removeHandle(item.id)"
+        >
+          X
+        </Button>
+      </div>
+      <!-- <Textarea class="textarea" v-model="contentFrontmatter" /> -->
     </div>
+
+    <!-- content -->
+    <h2 v-if="isEditMode">Content</h2>
     <div class="content">
       <div class="content-md" v-if="isEditMode">
         <Textarea class="textarea" v-model="contentMd" />
@@ -182,12 +328,28 @@ watchDebounced(
 }
 
 .frontmatter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   width: 100%;
 }
 
 .frontmatter textarea {
   width: 100%;
   height: 6rem;
+}
+
+.frontmatter-header {
+  display: flex;
+}
+
+.frontmatter-item {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.frontmatter-value {
+  flex-grow: 1;
 }
 
 .content {
@@ -204,5 +366,13 @@ watchDebounced(
   width: 100%;
   min-height: 100%;
   height: 300px;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
+.invisible {
+  visibility: hidden;
 }
 </style>

@@ -182,6 +182,7 @@ const callApi = (text: string) => {
 
 const copyKeyToConfirm = () => {
   docAesKeyConfirm.value = docAesKey.value
+  decryptHandle(new Event('submit'))
 }
 
 watch(

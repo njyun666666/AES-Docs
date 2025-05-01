@@ -180,6 +180,10 @@ const callApi = (text: string) => {
     })
 }
 
+const copyKeyToConfirm = () => {
+  docAesKeyConfirm.value = docAesKey.value
+}
+
 watch(
   page,
   async () => {
@@ -244,6 +248,9 @@ watchDebounced(
     <div>
       <form class="doc-aes-form" @submit="decryptHandle">
         <InputText type="text" v-model="docAesKey" placeholder="Key" autocomplete="one-time-code" />
+        <Button type="button" title="copy" :class="{ hidden: isNew }" @click="copyKeyToConfirm">
+          <span>></span>
+        </Button>
         <InputText
           type="text"
           v-model="docAesKeyConfirm"
@@ -379,5 +386,9 @@ watchDebounced(
 
 .invisible {
   visibility: hidden;
+}
+
+.hidden {
+  display: none;
 }
 </style>
